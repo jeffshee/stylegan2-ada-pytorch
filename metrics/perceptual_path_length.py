@@ -17,7 +17,8 @@ import torch
 import dnnlib
 from . import metric_utils
 
-#----------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------
 
 # Spherical interpolation of a batch of vectors.
 def slerp(a, b, t):
@@ -31,7 +32,8 @@ def slerp(a, b, t):
     d = d / d.norm(dim=-1, keepdim=True)
     return d
 
-#----------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------
 
 class PPLSampler(torch.nn.Module):
     def __init__(self, G, G_kwargs, epsilon, space, sampling, crop, vgg16):
@@ -53,13 +55,13 @@ class PPLSampler(torch.nn.Module):
 
         # Interpolate in W or Z.
         if self.space == 'w':
-            w0, w1 = self.G.mapping(z=torch.cat([z0,z1]), c=torch.cat([c,c])).chunk(2)
+            w0, w1 = self.G.mapping(z=torch.cat([z0, z1]), c=torch.cat([c, c])).chunk(2)
             wt0 = w0.lerp(w1, t.unsqueeze(1).unsqueeze(2))
             wt1 = w0.lerp(w1, t.unsqueeze(1).unsqueeze(2) + self.epsilon)
-        else: # space == 'z'
+        else:  # space == 'z'
             zt0 = slerp(z0, z1, t.unsqueeze(1))
             zt1 = slerp(z0, z1, t.unsqueeze(1) + self.epsilon)
-            wt0, wt1 = self.G.mapping(z=torch.cat([zt0,zt1]), c=torch.cat([c,c])).chunk(2)
+            wt0, wt1 = self.G.mapping(z=torch.cat([zt0, zt1]), c=torch.cat([c, c])).chunk(2)
 
         # Randomize noise buffers.
         for name, buf in self.G.named_buffers():
@@ -67,18 +69,19 @@ class PPLSampler(torch.nn.Module):
                 buf.copy_(torch.randn_like(buf))
 
         # Generate images.
-        img = self.G.synthesis(ws=torch.cat([wt0,wt1]), noise_mode='const', force_fp32=True, **self.G_kwargs)
+        img = self.G.synthesis(ws=torch.cat([wt0, wt1]), noise_mode='const', force_fp32=True, **self.G_kwargs)
 
         # Center crop.
         if self.crop:
             assert img.shape[2] == img.shape[3]
             c = img.shape[2] // 8
-            img = img[:, :, c*3 : c*7, c*2 : c*6]
+            img = img[:, :, c * 3: c * 7, c * 2: c * 6]
 
         # Downsample to 256x256.
         factor = self.G.img_resolution // 256
         if factor > 1:
-            img = img.reshape([-1, img.shape[1], img.shape[2] // factor, factor, img.shape[3] // factor, factor]).mean([3, 5])
+            img = img.reshape([-1, img.shape[1], img.shape[2] // factor, factor, img.shape[3] // factor, factor]).mean(
+                [3, 5])
 
         # Scale dynamic range from [-1,1] to [0,255].
         img = (img + 1) * (255 / 2)
@@ -90,15 +93,18 @@ class PPLSampler(torch.nn.Module):
         dist = (lpips_t0 - lpips_t1).square().sum(1) / self.epsilon ** 2
         return dist
 
-#----------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------
 
 def compute_ppl(opts, num_samples, epsilon, space, sampling, crop, batch_size, jit=False):
     dataset = dnnlib.util.construct_class_by_name(**opts.dataset_kwargs)
     vgg16_url = 'https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metrics/vgg16.pt'
-    vgg16 = metric_utils.get_feature_detector(vgg16_url, num_gpus=opts.num_gpus, rank=opts.rank, verbose=opts.progress.verbose)
+    vgg16 = metric_utils.get_feature_detector(vgg16_url, num_gpus=opts.num_gpus, rank=opts.rank,
+                                              verbose=opts.progress.verbose)
 
     # Setup sampler.
-    sampler = PPLSampler(G=opts.G, G_kwargs=opts.G_kwargs, epsilon=epsilon, space=space, sampling=sampling, crop=crop, vgg16=vgg16)
+    sampler = PPLSampler(G=opts.G, G_kwargs=opts.G_kwargs, epsilon=epsilon, space=space, sampling=sampling, crop=crop,
+                         vgg16=vgg16)
     sampler.eval().requires_grad_(False).to(opts.device)
     if jit:
         c = torch.zeros([batch_size, opts.G.c_dim], device=opts.device)
@@ -128,4 +134,4 @@ def compute_ppl(opts, num_samples, epsilon, space, sampling, crop, batch_size, j
     ppl = np.extract(np.logical_and(dist >= lo, dist <= hi), dist).mean()
     return float(ppl)
 
-#----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------

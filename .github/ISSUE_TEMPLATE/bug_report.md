@@ -1,7 +1,5 @@
 ---
-name: Bug report
-about: Create a report to help us improve
-title: ''
+name: Bug report about: Create a report to help us improve title: ''
 labels: ''
 assignees: ''
 
@@ -12,6 +10,7 @@ A clear and concise description of what the bug is.
 
 **To Reproduce**
 Steps to reproduce the behavior:
+
 1. In '...' directory, run command '...'
 2. See error (copy&paste full log, including exceptions and **stacktraces**).
 
@@ -24,12 +23,13 @@ A clear and concise description of what you expected to happen.
 If applicable, add screenshots to help explain your problem.
 
 **Desktop (please complete the following information):**
- - OS: [e.g. Linux Ubuntu 20.04, Windows 10]
- - PyTorch version (e.g., pytorch 1.7.1)
- - CUDA toolkit version (e.g., CUDA 11.0)
- - NVIDIA driver version
- - GPU [e.g., Titan V, RTX 3090]
- - Docker: did you use Docker?  If yes, specify docker image URL (e.g., nvcr.io/nvidia/pytorch:20.12-py3)
+
+- OS: [e.g. Linux Ubuntu 20.04, Windows 10]
+- PyTorch version (e.g., pytorch 1.7.1)
+- CUDA toolkit version (e.g., CUDA 11.0)
+- NVIDIA driver version
+- GPU [e.g., Titan V, RTX 3090]
+- Docker: did you use Docker? If yes, specify docker image URL (e.g., nvcr.io/nvidia/pytorch:20.12-py3)
 
 **Additional context**
 Add any other context about the problem here.
